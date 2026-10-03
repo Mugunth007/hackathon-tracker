@@ -1,36 +1,82 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🛰️ AETHER | Hackathon Radar & AI Assistant
 
-## Getting Started
+A sleek personal hackathon tracking platform built with **Next.js 16**, **TypeScript**, **Tailwind CSS**, and **Inter** font, styled with an **Aceternity UI** dark aesthetic. Features **Supabase Realtime Database** synchronization and an **AI Chatbot** powered by **Google Gemini API** (`@google/genai`) to parse and track hackathons naturally.
 
-First, run the development server:
+---
 
+## ⚡ Features
+
+- **Aceternity UI Aesthetic**: Dark palette (`#09090b`), glowing borders, ambient gradients, interactive spotlight hover effects, and Inter typography.
+- **AI Chatbot (Gemini 2.5)**: Just mention a hackathon naturally:
+  > *"I am participating in HackIndia starting Oct 20 to Oct 22, website is hackindia.dev"*
+  
+  The AI assistant extracts the start date, end date, platform, tags, and automatically adds it to your radar with confetti!
+- **Realtime Database (Supabase)**: Live synchronization across devices/tabs using Supabase `postgres_changes`.
+- **Zero-Setup Local Storage Fallback**: Works immediately out of the box even before configuring Supabase.
+- **Live Status & Countdown Timers**: Automatically detects if an event is *Live Now*, *Upcoming*, or *Completed* with dynamic countdowns ("Starts in 2 days", "Ends in 14h").
+- **Settings Modal**: Easily enter your Supabase URL, Anon Key, and Gemini API Key right from the UI or via `.env.local`.
+
+---
+
+## 🚀 Quick Start
+
+### 1. Install & Run
 ```bash
+cd hackathon-tracker
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+```
+Open [http://localhost:3000](http://localhost:3000) in your browser.
+
+---
+
+## 🔑 Environment Setup (`.env.local`)
+
+Create or edit `.env.local` in the project root:
+
+```env
+# Gemini API Key (get from: https://aistudio.google.com/app/apikey)
+GEMINI_API_KEY=your_gemini_api_key_here
+
+# Supabase Realtime Database (get from: https://supabase.com)
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key_here
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+*(Note: You can also enter these keys directly in the app by clicking the **Settings (Gear icon)** in the top right!)*
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+---
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 🗄️ Supabase Realtime Setup
 
-## Learn More
+1. In your Supabase Dashboard, go to **SQL Editor** -> **New Query**.
+2. Copy and paste the script below (also located at `supabase/schema.sql`):
 
-To learn more about Next.js, take a look at the following resources:
+```sql
+create table if not exists public.hackathons (
+  id text primary key default gen_random_uuid()::text,
+  title text not null,
+  start_date text not null,
+  end_date text not null,
+  website_url text,
+  platform text default 'Other',
+  status text default 'upcoming',
+  description text,
+  tags text[] default '{}',
+  team_name text,
+  prize_pool text,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+alter table public.hackathons enable row level security;
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+create policy "Allow all actions"
+on public.hackathons for all
+using (true)
+with check (true);
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+-- Enable Realtime
+alter publication supabase_realtime add table public.hackathons;
+```
+3. Click **Run**.
+4. In the app, click the **Settings (Gear icon)**, enter your Supabase URL & Anon Key, and click **Test Supabase Connection**. You are now live!
